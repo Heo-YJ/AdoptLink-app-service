@@ -8,14 +8,11 @@ import animals.demo.common.ErrorCode;
 import animals.demo.security.JwtTokenProvider;
 import animals.demo.user.entity.User;
 import animals.demo.user.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor //생성자 직접 안써도 됨
@@ -139,12 +136,12 @@ public class AuthService {
 
         // 현재 비밀번호 일치 확인
         if(!passwordEncoder.matches(changePasswordRequestDto.getCurrentPassword(), user.getPasswordHash())) {
-            throw new CustomException(ErrorCode.PASSWORD_MISMATCH);
+            throw new CustomException(ErrorCode.CURRENT_PASSWORD_MISMATCH);
         }
 
         // 새 비밀번호 확인 절차
         if(!changePasswordRequestDto.getNewPassword().equals(changePasswordRequestDto.getPasswordConfirm())) {
-            throw new CustomException(ErrorCode.PASSWORD_MISMATCH);
+            throw new CustomException(ErrorCode.NEW_PASSWORD_NOT_CONFIRM);
         }
 
         // 새 비밀번호 암호화

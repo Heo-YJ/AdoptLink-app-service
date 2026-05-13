@@ -1,7 +1,10 @@
 package animals.demo.security;
 
 import animals.demo.auth.repository.RefreshTokenRepository;
+import animals.demo.common.CustomException;
+import animals.demo.common.ErrorCode;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -70,8 +73,10 @@ public class JwtTokenProvider {
         try {
             getClaims(token);
             return true;
+        } catch (ExpiredJwtException e) {
+            throw new CustomException(ErrorCode.EXPIRED_TOKEN);
         } catch (JwtException | IllegalArgumentException e) {
-            return false;
+            throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
     }
 

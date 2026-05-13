@@ -3,10 +3,10 @@ package animals.demo.auth.controller;
 import animals.demo.auth.dto.*;
 import animals.demo.auth.service.AuthService;
 import animals.demo.common.ApiResponse;
+import animals.demo.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -42,8 +42,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout() {
-        Long userId = (Long) SecurityContextHolder.getContext()
-                .getAuthentication().getPrincipal();
+        Long userId = SecurityUtils.getCurrentUserId();
         authService.logout(userId);
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -52,8 +51,7 @@ public class AuthController {
 
     @PatchMapping("/password")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequestDto changePasswordRequestDto) {
-        Long userId = (Long) SecurityContextHolder.getContext()
-                .getAuthentication().getPrincipal();
+        Long userId = SecurityUtils.getCurrentUserId();
         authService.changePassword(userId, changePasswordRequestDto);
         return ResponseEntity
                 .status(HttpStatus.OK)

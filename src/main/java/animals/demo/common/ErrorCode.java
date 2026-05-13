@@ -23,8 +23,12 @@ public enum ErrorCode {
 
     //토큰 재발급
     INVALID_REFRESH_TOKEN(401, HttpStatus.UNAUTHORIZED, "유효하지 않은 Refresh Token입니다."),
-    USER_NOT_FOUND(404, HttpStatus.NOT_FOUND, "존재하지 않는 사용자입니다.");
+    USER_NOT_FOUND(404, HttpStatus.NOT_FOUND, "존재하지 않는 사용자입니다."),
+    EXPIRED_TOKEN(403, HttpStatus.FORBIDDEN, "만료된 토큰입니다."),
 
+    //비밀번호 변경
+    NEW_PASSWORD_NOT_CONFIRM(400, HttpStatus.BAD_REQUEST, "새 비밀번호와 비밀번호 확인이 일치하지 않습니다."),
+    CURRENT_PASSWORD_MISMATCH(401, HttpStatus.UNAUTHORIZED, "현재 비밀번호가 일치하지 않습니다.");
 
     private final Integer status;
     private final HttpStatus httpStatus;
