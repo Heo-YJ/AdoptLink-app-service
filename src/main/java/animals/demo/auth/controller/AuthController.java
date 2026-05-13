@@ -1,18 +1,13 @@
 package animals.demo.auth.controller;
 
-import animals.demo.auth.dto.LoginRequestDto;
-import animals.demo.auth.dto.LoginResponseDto;
-import animals.demo.auth.dto.SignupRequestDto;
-import animals.demo.auth.dto.SignupResponseDto;
+import animals.demo.auth.dto.*;
 import animals.demo.auth.service.AuthService;
 import animals.demo.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -35,4 +30,34 @@ public class AuthController {
                 .status(HttpStatus.OK)
                 .body(ApiResponse.ok("로그인 되었습니다.", response));
     }
+
+    @PostMapping("/reissue")
+    public ResponseEntity<?> reissue(@RequestHeader("Authorization") String authorization) {
+        String refreshToken = authorization.substring(7);
+        ReissueResponseDto response = authService.reissue(refreshToken);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.ok("토큰이 재발급 되었습니다.", response));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        Long userId = (Long) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
+        authService.logout(userId);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.ok("로그아웃이 완료되었습니다.", null));
+    }
+
+    @PatchMapping("/password")
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequestDto changePasswordRequestDto) {
+        Long userId = (Long) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
+        authService.changePassword(userId, changePasswordRequestDto);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.ok("비밀번호가 성공적으로 변경되었습니다.", null));
+    }
+
 }

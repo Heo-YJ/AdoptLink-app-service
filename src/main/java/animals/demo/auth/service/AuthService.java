@@ -1,9 +1,8 @@
 package animals.demo.auth.service;
 
-import animals.demo.auth.dto.LoginRequestDto;
-import animals.demo.auth.dto.LoginResponseDto;
-import animals.demo.auth.dto.SignupRequestDto;
-import animals.demo.auth.dto.SignupResponseDto;
+import animals.demo.auth.dto.*;
+import animals.demo.auth.entity.RefreshToken;
+import animals.demo.auth.repository.RefreshTokenRepository;
 import animals.demo.common.CustomException;
 import animals.demo.common.ErrorCode;
 import animals.demo.security.JwtTokenProvider;
@@ -24,6 +23,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Transactional
     public SignupResponseDto signup(SignupRequestDto signupRequestDto) {
@@ -74,10 +74,83 @@ public class AuthService {
         String accessToken = jwtTokenProvider.createAccessToken(user.getUserId(), user.getRole().name());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getUserId());
 
+        //RefreshToken 저장
+        RefreshToken refreshTokenEntity = RefreshToken.builder()
+                .userId(user.getUserId())
+                .refreshToken(refreshToken)
+                .build();
+        refreshTokenRepository.save(refreshTokenEntity);
+
         return LoginResponseDto.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
+
     }
+
+    @Transactional
+    public ReissueResponseDto reissue(String refreshToken) {
+        // 1. Refresh Token 검증
+        if(!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new RuntimeException("Refresh Token이 유효하지 않습니다.");
+        }
+
+        // 2. 토큰에서 userId 가져오기
+        Long userId = jwtTokenProvider.getUserId(refreshToken);
+
+        // 3. DB에서 저장된 Refresh Token 가져오기
+        RefreshToken savedToken = refreshTokenRepository.findByUserId(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REFRESH_TOKEN));
+
+        // 4. 토큰 일치 여부 확인
+        if(!savedToken.getRefreshToken().equals(refreshToken)) {
+            throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        // 5. 유저 정보 가져오기
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        // 6. 새 Access Token 발급
+        String newAccessToken = jwtTokenProvider.createAccessToken(userId, user.getRole().name());
+
+        // 7. Refresh Token 업데이트
+        String newRefreshToken = jwtTokenProvider.createRefreshToken(userId);
+        refreshTokenRepository.save(RefreshToken.builder()
+                .userId(userId)
+                .refreshToken(newRefreshToken)
+                .build());
+
+        return ReissueResponseDto.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .build();
+    }
+
+    @Transactional
+    public void logout(Long userId) {
+        refreshTokenRepository.deleteByUserId(userId);
+    }
+
+    @Transactional
+    public void changePassword(Long userId, ChangePasswordRequestDto changePasswordRequestDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        // 현재 비밀번호 일치 확인
+        if(!passwordEncoder.matches(changePasswordRequestDto.getCurrentPassword(), user.getPasswordHash())) {
+            throw new CustomException(ErrorCode.PASSWORD_MISMATCH);
+        }
+
+        // 새 비밀번호 확인 절차
+        if(!changePasswordRequestDto.getNewPassword().equals(changePasswordRequestDto.getPasswordConfirm())) {
+            throw new CustomException(ErrorCode.PASSWORD_MISMATCH);
+        }
+
+        // 새 비밀번호 암호화
+        String encodedPassword = passwordEncoder.encode(changePasswordRequestDto.getNewPassword());
+        user.changPasswordHash(encodedPassword);
+    }
+
 
 }

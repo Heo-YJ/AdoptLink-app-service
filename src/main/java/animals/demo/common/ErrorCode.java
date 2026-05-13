@@ -19,8 +19,11 @@ public enum ErrorCode {
 
     //로그인
     ID_PASSWORD_MISMATCH(401, HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다."),
+    MISSING_REQUIRED_VALUE(400, HttpStatus.BAD_REQUEST, "아이디와 비밀번호는 필수 입력값입니다."),
 
-    MISSING_REQUIRED_VALUE(400, HttpStatus.BAD_REQUEST, "아이디와 비밀번호는 필수 입력값입니다.");
+    //토큰 재발급
+    INVALID_REFRESH_TOKEN(401, HttpStatus.UNAUTHORIZED, "유효하지 않은 Refresh Token입니다."),
+    USER_NOT_FOUND(404, HttpStatus.NOT_FOUND, "존재하지 않는 사용자입니다.");
 
 
     private final Integer status;
