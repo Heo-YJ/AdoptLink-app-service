@@ -1,7 +1,7 @@
 package animals.demo.user.controller;
 
 import animals.demo.common.ApiResponse;
-import animals.demo.post.dto.MyPostFeedListResponseDto;
+import animals.demo.post.dto.PostFeedListResponseDto;
 import animals.demo.post.service.PostService;
 import animals.demo.security.SecurityUtils;
 import animals.demo.user.dto.UpdateUserInfoRequestDto;
@@ -63,9 +63,18 @@ public class UserController {
     @GetMapping("/me/posts")
     public ResponseEntity<?> getMyPosts() {
         Long userId = SecurityUtils.getCurrentUserId();
-        MyPostFeedListResponseDto response = postService.getMyPostFeed(userId);
+        PostFeedListResponseDto response = postService.getPostFeed(userId);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.ok("내 게시글 피드 조회에 성공했습니다.", response));
+    }
+
+    //특정 유저 게시글 피드 조회
+    @GetMapping("/{userId}/posts")
+    public ResponseEntity<?> getUserPosts(@PathVariable Long userId) {
+        PostFeedListResponseDto response = postService.getPostFeed(userId);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.ok("게시글 피드 조회에 성공했습니다.", response));
     }
 }

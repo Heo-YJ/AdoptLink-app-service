@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class MyPostFeedResponseDto {
+public class PostFeedResponseDto {
     private Long postId;
     private String thumbnailImageUrl;
 }

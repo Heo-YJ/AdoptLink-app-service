@@ -7,6 +7,6 @@ import java.util.List;
 
 @Getter
 @Builder
-public class MyPostFeedListResponseDto {
-    private List<MyPostFeedResponseDto> posts;
+public class PostFeedListResponseDto {
+    private List<PostFeedResponseDto> posts;
 }
