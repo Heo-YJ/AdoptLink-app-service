@@ -30,6 +30,8 @@ public enum ErrorCode {
     NEW_PASSWORD_NOT_CONFIRM(400, HttpStatus.BAD_REQUEST, "새 비밀번호와 비밀번호 확인이 일치하지 않습니다."),
     CURRENT_PASSWORD_MISMATCH(401, HttpStatus.UNAUTHORIZED, "현재 비밀번호가 일치하지 않습니다.");
 
+
+
     private final Integer status;
     private final HttpStatus httpStatus;
     private final String message;
