@@ -2,14 +2,11 @@ package animals.demo.post.service;
 
 import animals.demo.common.CustomException;
 import animals.demo.common.ErrorCode;
-import animals.demo.post.dto.ScrapPostListResponseDto;
-import animals.demo.post.dto.ScrapPostResponseDto;
-import animals.demo.post.entity.Post;
-import animals.demo.post.entity.PostScrap;
+import animals.demo.post.dto.*;
+import animals.demo.post.entity.*;
+import animals.demo.post.repository.PostAnimalRepository;
 import animals.demo.post.repository.PostImageRepository;
 import animals.demo.post.repository.PostRepository;
-import animals.demo.post.dto.PostFeedListResponseDto;
-import animals.demo.post.dto.PostFeedResponseDto;
 import animals.demo.post.repository.PostScrapRepository;
 import animals.demo.user.entity.User;
 import animals.demo.user.repository.UserRepository;
@@ -26,6 +23,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final PostImageRepository postImageRepository;
     private final PostScrapRepository postScrapRepository;
+    private final PostAnimalRepository postAnimalRepository;
 
     //게시글 피드 조회 (내 게시글, 특정 유저 게시글 공통)
     @Transactional
@@ -73,6 +71,56 @@ public class PostService {
 
         return ScrapPostListResponseDto.builder()
                 .scrapPosts(scrapList)
+                .build();
+    }
+
+    //새 게시글 작성
+    @Transactional
+    public CreatePostResponseDto createPost(Long userId
+            , CreatePostRequestDto createPostRequestDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        //Post 엔티티 생성 후 저장
+        Post post = Post.builder()
+                .author(user)
+                .title(createPostRequestDto.getTitle())
+                .content(createPostRequestDto.getContent())
+                .status(Status.AVAILABLE)
+                .build();
+
+        Post savedPost = postRepository.save(post);
+
+        //PostAnimal 엔티티 생성 후 저장
+        PostAnimal postAnimal = PostAnimal.builder()
+                .post(savedPost)
+                .species(Species.valueOf(createPostRequestDto.getAnimalInfo().getSpecies()))
+                .breed(createPostRequestDto.getAnimalInfo().getBreed())
+                .sex(Sex.valueOf(createPostRequestDto.getAnimalInfo().getSex()))
+                .age(createPostRequestDto.getAnimalInfo().getAge())
+                .neutered(createPostRequestDto.getAnimalInfo().getNeutered())
+                .build();
+
+        postAnimalRepository.save(postAnimal);
+
+        //이미지는 S3에 업로드 후 URL 받아서 PostImage 엔티티 저장
+        List<ImageIndexRequestDto> images = createPostRequestDto.getImages();
+
+        if (images != null) {
+            for (ImageIndexRequestDto image : images) {
+                PostImage postImage = PostImage.builder()
+                        .post(savedPost)
+                        .postImageUrl(image.getPostImageUrl())
+                        .orderIndex(image.getOrderIndex())
+                        .build();
+                postImageRepository.save(postImage);
+            }
+        }
+
+        //CreateResponseDto 반환
+        return CreatePostResponseDto.builder()
+                .postId(savedPost.getPostId())
+                .title(savedPost.getTitle())
                 .build();
     }
 }

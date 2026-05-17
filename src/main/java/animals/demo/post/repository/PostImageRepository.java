@@ -6,6 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
-public interface PostImageRepository extends JpaRepository<Post, Long> {
+public interface PostImageRepository extends JpaRepository<PostImage, Long> {
     Optional<PostImage> findFirstByPost_PostIdAndOrderIndex(Long postId, int orderIndex);
 }
