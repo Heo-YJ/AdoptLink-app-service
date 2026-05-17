@@ -123,4 +123,24 @@ public class PostService {
                 .title(savedPost.getTitle())
                 .build();
     }
+
+    //게시글 분양여부 변경
+    @Transactional
+    public ChangePostStatusResponseDto changeStatus(Long userId, Long postId
+                                                    , ChangePostStatusRequestDto changePostStatusRequestDto) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+
+        if(!post.getAuthor().getUserId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
+
+        post.changeStatus(Status.valueOf(changePostStatusRequestDto.getStatus()));
+
+        return ChangePostStatusResponseDto.builder()
+                .postId(post.getPostId())
+                .status(post.getStatus().name())
+                .build();
+
+    }
 }
