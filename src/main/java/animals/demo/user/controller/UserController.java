@@ -2,6 +2,7 @@ package animals.demo.user.controller;
 
 import animals.demo.common.ApiResponse;
 import animals.demo.post.dto.PostFeedListResponseDto;
+import animals.demo.post.dto.ScrapPostListResponseDto;
 import animals.demo.post.service.PostService;
 import animals.demo.security.SecurityUtils;
 import animals.demo.user.dto.UpdateUserInfoRequestDto;
@@ -76,5 +77,15 @@ public class UserController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.ok("게시글 피드 조회에 성공했습니다.", response));
+    }
+
+    //스크랩한 게시글 조회
+    @GetMapping("/me/scraps")
+    public ResponseEntity<?> getScrapPost() {
+        Long userId = SecurityUtils.getCurrentUserId();
+        ScrapPostListResponseDto response = postService.getScrapPost(userId);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.ok("스크랩한 게시글 조회에 성공했습니다.", response));
     }
 }
