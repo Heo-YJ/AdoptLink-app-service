@@ -12,6 +12,10 @@ import animals.demo.user.entity.User;
 import animals.demo.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -241,4 +245,42 @@ public class PostService {
                 .build();
     }
 
+    @Transactional
+    public PostSearchListResponseDto searchPosts(String keyword, int offset, int limit, String sort) {
+        Pageable pageable = PageRequest.of(
+                offset / limit,
+                limit,
+                sort.equals("oldest") ? Sort.by("createdAt").ascending() : Sort.by("createdAt").descending()
+        );
+
+        Page<Post> posts = postRepository.findByTitleContainingAndStatusAndDeletedAtIsNull(
+                keyword,
+                Status.AVAILABLE,
+                pageable
+        );
+
+        List<PostSearchResponseDto> postList = posts.map(post -> {
+            String thumbnailImageUrl = postImageRepository
+                    .findFirstByPost_PostIdAndOrderIndex(post.getPostId(), 1)
+                    .map(PostImage::getPostImageUrl)
+                    .orElse(null);
+            return PostSearchResponseDto.builder()
+                    .postId(post.getPostId())
+                    .title(post.getTitle())
+                    .thumbnailImageUrl(thumbnailImageUrl)
+                    .status(post.getStatus().name())
+                    .createdAt(post.getCreatedAt())
+                    .build();
+
+        }).toList();
+
+        return PostSearchListResponseDto.builder()
+                .posts(postList)
+                .pagination(PaginationResponseDto.builder()
+                        .offset(offset)
+                        .limit(limit)
+                        .count(postList.size())
+                        .build())
+                .build();
+    }
 }

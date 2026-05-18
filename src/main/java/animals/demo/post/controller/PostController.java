@@ -8,6 +8,8 @@ import animals.demo.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.Response;
+import org.hibernate.annotations.TargetEmbeddable;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -64,5 +66,19 @@ public class PostController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.ok("게시글 조회에 성공했습니다.", response));
+    }
+
+    //게시글 검색
+    @GetMapping
+    public ResponseEntity<?> searchPosts(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(defaultValue = "latest") String sort
+    ) {
+        PostSearchListResponseDto response = postService.searchPosts(keyword, offset, limit, sort);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.ok("게시글 검색에 성공했습니다.", response));
     }
 }
