@@ -22,6 +22,8 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
 
+
+    //회원가입
     @Transactional
     public SignupResponseDto signup(SignupRequestDto signupRequestDto) {
         //아이디 중복확인
@@ -50,6 +52,7 @@ public class AuthService {
                 .build();
     }
 
+    //로그인
     @Transactional
     public LoginResponseDto login(LoginRequestDto loginRequestDto) {
 
@@ -85,6 +88,7 @@ public class AuthService {
 
     }
 
+    //토큰 재발급
     @Transactional
     public ReissueResponseDto reissue(String refreshToken) {
         // 1. Refresh Token 검증
@@ -124,11 +128,13 @@ public class AuthService {
                 .build();
     }
 
+    //로그아웃
     @Transactional
     public void logout(Long userId) {
         refreshTokenRepository.deleteByUserId(userId);
     }
 
+    //비밀번호 변경
     @Transactional
     public void changePassword(Long userId, ChangePasswordRequestDto changePasswordRequestDto) {
         User user = userRepository.findById(userId)

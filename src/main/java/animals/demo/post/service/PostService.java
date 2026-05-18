@@ -141,6 +141,104 @@ public class PostService {
                 .postId(post.getPostId())
                 .status(post.getStatus().name())
                 .build();
-
     }
+
+    //게시글 수정
+    //분양 사기와 같은 악용을 방지하기 위해 제목, 본문, 사진만 수정가능함 -> 추후 코드 수정 예정. 현재는 응답 데이터 null
+    @Transactional
+    public void updatePost(Long postId, Long userId, UpdatePostRequestDto updatePostRequestDto) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+
+        if(!post.getAuthor().getUserId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
+
+        post.updateTitle(updatePostRequestDto.getTitle());
+        post.updateContent(updatePostRequestDto.getContent());
+
+        PostAnimal postAnimal = postAnimalRepository.findByPost_PostId(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+        if(updatePostRequestDto.getAnimal() != null) {
+            postAnimal.update(
+                    Species.valueOf(updatePostRequestDto.getAnimal().getSpecies()),
+                    updatePostRequestDto.getAnimal().getBreed(),
+                    Sex.valueOf(updatePostRequestDto.getAnimal().getSex()),
+                    updatePostRequestDto.getAnimal().getAge(),
+                    updatePostRequestDto.getAnimal().getNeutered()
+            );
+        }
+
+        postImageRepository.deleteAllByPost_PostId(postId);
+        if(updatePostRequestDto.getImages() != null) {
+            for (ImageIndexRequestDto image : updatePostRequestDto.getImages()) {
+                PostImage postImage = PostImage.builder()
+                        .post(post)
+                        .postImageUrl(image.getPostImageUrl())
+                        .orderIndex(image.getOrderIndex())
+                        .build();
+                postImageRepository.save(postImage);
+            }
+        }
+    }
+
+    //게시글 삭제
+    @Transactional
+    public void deletePost(Long postId, Long userId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+
+        if(!post.getAuthor().getUserId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
+
+        post.softDelete();
+    }
+
+    //게시글 상세 조회
+    @Transactional
+    public PostDetailResponseDto getPost(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+
+        User author = post.getAuthor();
+
+        AuthorDetailResponseDto authorDetail = AuthorDetailResponseDto.builder()
+                .userId(author.getUserId())
+                .nickname(author.getNickname())
+                .profileImageUrl(author.getProfileImageUrl())
+                .build();
+
+        PostAnimal postAnimal = postAnimalRepository.findByPost_PostId(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+
+        AnimalDetailResponseDto animalDetail = AnimalDetailResponseDto.builder()
+                .species(postAnimal.getSpecies().name())
+                .breed(postAnimal.getBreed())
+                .sex(postAnimal.getSex().name())
+                .age(postAnimal.getAge())
+                .neutered(postAnimal.isNeutered())
+                .build();
+
+        List<PostImageResponseDto> images = postImageRepository.findByPost_PostIdOrderByOrderIndexAsc(postId)
+                .stream()
+                .map(image -> PostImageResponseDto.builder()
+                        .postImageUrl(image.getPostImageUrl())
+                        .orderIndex(image.getOrderIndex())
+                        .build())
+                .toList();
+
+
+        return PostDetailResponseDto.builder()
+                .postId(post.getPostId())
+                .title(post.getTitle())
+                .content(post.getContent())
+                .status(post.getStatus().name())
+                .createdAt(post.getCreatedAt())
+                .authorDetail(authorDetail)
+                .animalDetail(animalDetail)
+                .postImage(images)
+                .build();
+    }
+
 }
