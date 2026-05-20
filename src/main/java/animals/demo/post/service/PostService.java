@@ -19,6 +19,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -131,11 +132,11 @@ public class PostService {
     //게시글 분양여부 변경
     @Transactional
     public ChangePostStatusResponseDto changeStatus(Long userId, Long postId
-                                                    , ChangePostStatusRequestDto changePostStatusRequestDto) {
+            , ChangePostStatusRequestDto changePostStatusRequestDto) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
-        if(!post.getAuthor().getUserId().equals(userId)) {
+        if (!post.getAuthor().getUserId().equals(userId)) {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
 
@@ -154,7 +155,7 @@ public class PostService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
-        if(!post.getAuthor().getUserId().equals(userId)) {
+        if (!post.getAuthor().getUserId().equals(userId)) {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
 
@@ -163,7 +164,7 @@ public class PostService {
 
         PostAnimal postAnimal = postAnimalRepository.findByPost_PostId(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
-        if(updatePostRequestDto.getAnimal() != null) {
+        if (updatePostRequestDto.getAnimal() != null) {
             postAnimal.update(
                     Species.valueOf(updatePostRequestDto.getAnimal().getSpecies()),
                     updatePostRequestDto.getAnimal().getBreed(),
@@ -174,7 +175,7 @@ public class PostService {
         }
 
         postImageRepository.deleteAllByPost_PostId(postId);
-        if(updatePostRequestDto.getImages() != null) {
+        if (updatePostRequestDto.getImages() != null) {
             for (ImageIndexRequestDto image : updatePostRequestDto.getImages()) {
                 PostImage postImage = PostImage.builder()
                         .post(post)
@@ -192,7 +193,7 @@ public class PostService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
-        if(!post.getAuthor().getUserId().equals(userId)) {
+        if (!post.getAuthor().getUserId().equals(userId)) {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
 
@@ -245,6 +246,8 @@ public class PostService {
                 .build();
     }
 
+
+    //게시글 검색
     @Transactional
     public PostSearchListResponseDto searchPosts(String keyword, int offset, int limit, String sort) {
         Pageable pageable = PageRequest.of(
@@ -282,5 +285,35 @@ public class PostService {
                         .count(postList.size())
                         .build())
                 .build();
+    }
+
+    //게시글 스크랩
+    @Transactional
+    public ScrapResponseDto scrap(Long postId, Long userId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        Optional<PostScrap> existingScrap = postScrapRepository.findByUser_UserIdAndPost_PostId(userId, postId);
+
+        if (existingScrap.isPresent()) {
+            postScrapRepository.delete(existingScrap.get());
+            return ScrapResponseDto.builder()
+                    .scraped(false)
+                    .postId(post.getPostId())
+                    .build();
+        } else {
+            PostScrap postScrap = PostScrap.builder()
+                    .user(user)
+                    .post(post)
+                    .build();
+            postScrapRepository.save(postScrap);
+            return ScrapResponseDto.builder()
+                    .scraped(true)
+                    .postId(post.getPostId())
+                    .build();
+        }
     }
 }

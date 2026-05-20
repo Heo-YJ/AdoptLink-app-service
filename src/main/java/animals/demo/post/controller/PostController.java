@@ -81,4 +81,19 @@ public class PostController {
                 .status(HttpStatus.OK)
                 .body(ApiResponse.ok("게시글 검색에 성공했습니다.", response));
     }
+
+    //스크랩
+    @PostMapping("/{postId}/scrap")
+    public ResponseEntity<?> scrap(@PathVariable Long postId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        ScrapResponseDto response = postService.scrap(postId, userId);
+
+        String message = response.isScraped()
+                ? "게시글을 스크랩했습니다."
+                : "게시글을 스크랩해제했습니다.";
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.ok(message, response));
+    }
 }
