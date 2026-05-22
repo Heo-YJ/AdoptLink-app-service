@@ -1,5 +1,6 @@
 package animals.demo.chat.controller;
 
+import animals.demo.chat.dto.ChatRoomListResponseDto;
 import animals.demo.chat.dto.CreateChatRoomRequestDto;
 import animals.demo.chat.dto.CreateChatRoomResponseDto;
 import animals.demo.chat.service.ChatRoomService;
@@ -9,10 +10,7 @@ import animals.demo.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -35,5 +33,15 @@ public class ChatRoomController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.ok("기존 채팅방으로 연결되었습니다.", response));
+    }
+
+    //채팅방 목록 조회
+    @GetMapping
+    public ResponseEntity<?> getChatRoom() {
+        Long userId = SecurityUtils.getCurrentUserId();
+        ChatRoomListResponseDto response = chatRoomService.getChatRoom(userId);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.ok("채팅방 목록 조회에 성공했습니다.", response));
     }
 }

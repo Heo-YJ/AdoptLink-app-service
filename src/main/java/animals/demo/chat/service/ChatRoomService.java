@@ -1,5 +1,7 @@
 package animals.demo.chat.service;
 
+import animals.demo.chat.dto.ChatRoomListResponseDto;
+import animals.demo.chat.dto.ChatRoomResponseDto;
 import animals.demo.chat.dto.CreateChatRoomRequestDto;
 import animals.demo.chat.dto.CreateChatRoomResponseDto;
 import animals.demo.chat.entity.ChatRoom;
@@ -7,6 +9,7 @@ import animals.demo.chat.repository.ChatRoomRepository;
 import animals.demo.common.CustomException;
 import animals.demo.common.ErrorCode;
 import animals.demo.post.entity.Post;
+import animals.demo.post.repository.PostImageRepository;
 import animals.demo.post.repository.PostRepository;
 import animals.demo.user.entity.User;
 import animals.demo.user.repository.UserBlockRepository;
@@ -15,6 +18,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -24,6 +28,7 @@ public class ChatRoomService {
     private final PostRepository postRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final UserBlockRepository userBlockRepository;
+    private final PostImageRepository postImageRepository;
 
     //채팅방 생성
     @Transactional
@@ -71,6 +76,31 @@ public class ChatRoomService {
 
     //채팅방 목록 조회
     @Transactional
-    public
+    public ChatRoomListResponseDto getChatRoom(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        List<ChatRoom> chatRooms = chatRoomRepository.findByInquiryUser_UserId(userId);
+
+        List<ChatRoomResponseDto> chatRoomList = chatRooms.stream()
+                .map(chatRoom -> {
+                    String thumbnailImageUrl = postImageRepository
+                            .findFirstByPost_PostIdAndOrderIndex(chatRoom.getPost().getPostId(), 1)
+                            .map(postImage -> postImage.getPostImageUrl())
+                            .orElse(null);
+                    return ChatRoomResponseDto.builder()
+                            .roomId(chatRoom.getRoomId())
+                            .nickname(chatRoom.getPost().getAuthor().getNickname())
+                            .thumbnailImageUrl(thumbnailImageUrl)
+                            .lastMessage(chatRoom.getLastMessage())
+                            .lastMessageAt(chatRoom.getLastMessageAt())
+                            .unread_count(0) //일단 하드코딩 해두고 나중에 제대로 구현
+                            .build();
+                }).toList();
+        return ChatRoomListResponseDto.builder()
+                .chatRooms(chatRoomList)
+                .build();
+
+    }
 
 }
