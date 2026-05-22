@@ -4,10 +4,10 @@ import animals.demo.common.CustomException;
 import animals.demo.common.ErrorCode;
 import animals.demo.post.repository.PostImageRepository;
 import animals.demo.post.repository.PostRepository;
-import animals.demo.user.dto.UpdateUserInfoRequestDto;
-import animals.demo.user.dto.MyInfoResponseDto;
-import animals.demo.user.dto.UserInfoResponseDto;
+import animals.demo.user.dto.*;
 import animals.demo.user.entity.User;
+import animals.demo.user.entity.UserBlock;
+import animals.demo.user.repository.UserBlockRepository;
 import animals.demo.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +19,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PostRepository postRepository;
     private final PostImageRepository postImageRepository;
+    private final UserBlockRepository userBlockRepository;
 
     //회원 탈퇴
     @Transactional
@@ -65,6 +66,31 @@ public class UserService {
                 .userId(user.getUserId())
                 .nickname(user.getNickname())
                 .profileImageUrl(user.getProfileImageUrl())
+                .build();
+    }
+
+    //유저 차단
+    @Transactional
+    public UserBlockResponseDto BlockedUser(Long userId, Long blockedId) {
+        User blocker = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        User blocked = userRepository.findById(blockedId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        // A->B 또는 B->A 차단 여부 확인
+        if (userBlockRepository.existsByBlocker_UserIdAndBlocked_UserId(userId, blockedId)) {
+            throw new CustomException(ErrorCode.ALREADY_BLOCKED_USER);
+        }
+
+        UserBlock userBlock = UserBlock.builder()
+                .blocker(blocker)
+                .blocked(blocked)
+                .build();
+        userBlockRepository.save(userBlock);
+
+        return UserBlockResponseDto.builder()
+                .userId(blocked.getUserId())
                 .build();
     }
 

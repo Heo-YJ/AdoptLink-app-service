@@ -30,6 +30,7 @@ public class PostService {
     private final PostScrapRepository postScrapRepository;
     private final PostAnimalRepository postAnimalRepository;
 
+
     //게시글 피드 조회 (내 게시글, 특정 유저 게시글 공통)
     @Transactional
     public PostFeedListResponseDto getPostFeed(Long userId) {

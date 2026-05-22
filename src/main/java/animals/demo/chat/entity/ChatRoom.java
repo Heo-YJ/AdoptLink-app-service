@@ -32,18 +32,6 @@ public class ChatRoom {
     @JoinColumn(nullable = false)
     private Post post;
 
-    //채팅 차단 여부
-    @Column(nullable = false)
-    private boolean blocked;
-
-    //차단 유저
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "blockedByUserId")
-    private User blockedByUser;
-
-    //차단 시각
-    private LocalDateTime blockedAt;
-
     //방 생성 날짜
     @CreatedDate
     @Column(nullable = false, updatable = false)
@@ -60,25 +48,11 @@ public class ChatRoom {
     private ChatRoom (
             User inquiryUser,
             Post post,
-            Boolean blocked,
-            User blockedByUser,
             String lastMessage
     ) {
         this.inquiryUser = inquiryUser;
         this.post = post;
-        this.blocked = blocked;
-        this.blockedByUser = blockedByUser;
         this.lastMessage = lastMessage;
-    }
-
-    // 채팅방 차단
-    public void block(User blockedByUser) {
-        if (this.blocked) {
-            return;
-        }
-        this.blocked = true;
-        this.blockedByUser = blockedByUser;
-        this.blockedAt = LocalDateTime.now();
     }
 
     // 마지막 메시지 기록

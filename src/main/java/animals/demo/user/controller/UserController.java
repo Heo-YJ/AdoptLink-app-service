@@ -5,9 +5,7 @@ import animals.demo.post.dto.PostFeedListResponseDto;
 import animals.demo.post.dto.ScrapPostListResponseDto;
 import animals.demo.post.service.PostService;
 import animals.demo.security.SecurityUtils;
-import animals.demo.user.dto.UpdateUserInfoRequestDto;
-import animals.demo.user.dto.MyInfoResponseDto;
-import animals.demo.user.dto.UserInfoResponseDto;
+import animals.demo.user.dto.*;
 import animals.demo.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -88,4 +86,16 @@ public class UserController {
                 .status(HttpStatus.OK)
                 .body(ApiResponse.ok("스크랩한 게시글 조회에 성공했습니다.", response));
     }
+
+    //유저 차단
+    @PostMapping("{userId}/block")
+    public ResponseEntity<?> BlockedUser(@PathVariable Long userId) {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        UserBlockResponseDto response = userService.BlockedUser(currentUserId, userId);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.ok("차단되었습니다.", null));
+    }
+
 }

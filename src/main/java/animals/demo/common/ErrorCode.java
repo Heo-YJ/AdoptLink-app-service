@@ -31,8 +31,11 @@ public enum ErrorCode {
     CURRENT_PASSWORD_MISMATCH(401, HttpStatus.UNAUTHORIZED, "현재 비밀번호가 일치하지 않습니다."),
 
     POST_NOT_FOUND(404, HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),
-    FORBIDDEN(403, HttpStatus.FORBIDDEN, "해당 게시글의 작성자만 분양 상태를 변경할 수 있습니다.");
+    FORBIDDEN(403, HttpStatus.FORBIDDEN, "해당 게시글의 작성자만 분양 상태를 변경할 수 있습니다."),
 
+    //채팅방
+    NOT_CREATE_CHATROOM(403, HttpStatus.FORBIDDEN, "차단된 유저와 채팅방을 생성할 수 없습니다."),
+    ALREADY_BLOCKED_USER(403, HttpStatus.FORBIDDEN, "이미 차단된 유저입니다.");
 
 
     private final Integer status;
