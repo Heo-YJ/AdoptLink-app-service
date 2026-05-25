@@ -6,6 +6,7 @@ import animals.demo.chat.dto.MessageResponseDto;
 import animals.demo.chat.dto.PageResponseDto;
 import animals.demo.chat.entity.ChatRoom;
 import animals.demo.chat.entity.Message;
+import animals.demo.chat.repository.ChatRoomMemberRepository;
 import animals.demo.chat.repository.ChatRoomRepository;
 import animals.demo.chat.repository.MessageRepository;
 import animals.demo.common.CustomException;
@@ -28,6 +29,7 @@ public class MessageService {
     private final MessageRepository messageRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final UserRepository userRepository;
+    private final ChatRoomMemberRepository chatRoomMemberRepository;
 
     @Transactional
     public MessageDto saveMessage(MessageDto messageDto) {
@@ -44,6 +46,17 @@ public class MessageService {
                 .build();
 
         messageRepository.save(message);
+
+        //채팅방 숨김상태일 때, 상대방이 메시지를 보내면 숨김=true -> 숨김=false로 전환
+        Long inquiryUserId = chatRoom.getInquiryUser().getUserId();
+        Long authorUserId = chatRoom.getPost().getAuthor().getUserId();
+        Long receiverUserId = sender.getUserId().equals(inquiryUserId) ? authorUserId : inquiryUserId;
+
+        chatRoomMemberRepository.findByRoom_RoomIdAndUser_UserId(messageDto.getRoomId(), receiverUserId)
+                .ifPresent(member -> {
+                    if(member.isHidden()) { member.show(); }
+                });
+
         return messageDto;
     }
 

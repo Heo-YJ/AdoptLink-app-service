@@ -2,6 +2,8 @@ package animals.demo.chat.service;
 
 import animals.demo.chat.dto.*;
 import animals.demo.chat.entity.ChatRoom;
+import animals.demo.chat.entity.ChatRoomMember;
+import animals.demo.chat.repository.ChatRoomMemberRepository;
 import animals.demo.chat.repository.ChatRoomRepository;
 import animals.demo.common.CustomException;
 import animals.demo.common.ErrorCode;
@@ -27,6 +29,7 @@ public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
     private final UserBlockRepository userBlockRepository;
     private final PostImageRepository postImageRepository;
+    private final ChatRoomMemberRepository chatRoomMemberRepository;
 
     //채팅방 생성
     @Transactional
@@ -50,6 +53,13 @@ public class ChatRoomService {
         );
 
         if (existingRoom.isPresent()) {
+            chatRoomMemberRepository.findByRoom_RoomIdAndUser_UserId(
+                            existingRoom.get().getRoomId(), userId)
+                    .ifPresent(member -> {
+                        if (member.isHidden()) {
+                            member.show();
+                        }
+                    });
             return CreateChatRoomResponseDto.builder()
                     .postId(post.getPostId())
                     .roomId(existingRoom.get().getRoomId())
@@ -122,4 +132,15 @@ public class ChatRoomService {
                 .build();
     }
 
+    //채팅방 숨기기
+    @Transactional
+    public void deleteChatRoom(Long roomId, Long userId) {
+        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId)
+                .orElseThrow(() -> new CustomException(ErrorCode.CHATROOM_NOT_FOUND));
+
+        ChatRoomMember chatRoomMember = chatRoomMemberRepository.findByRoom_RoomIdAndUser_UserId(roomId, userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.CHATROOM_NOT_FOUND));
+
+        chatRoomMember.hide();
+    }
 }

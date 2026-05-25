@@ -69,6 +69,12 @@ public class ChatRoomMember {
         this.hiddenAt = LocalDateTime.now();
     }
 
+    //채팅 숨김 해제
+    public void show() {
+        this.hidden = false;
+        this.hiddenAt = null;
+    }
+
     //채팅 읽음 처리
     public void updateLastReadMessage(Message message) {
         if (message == null) {

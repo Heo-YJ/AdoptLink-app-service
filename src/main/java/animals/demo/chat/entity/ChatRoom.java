@@ -60,4 +60,5 @@ public class ChatRoom {
         this.lastMessage = lastMessage;
         this.lastMessageAt = LocalDateTime.now();
     }
+
 }

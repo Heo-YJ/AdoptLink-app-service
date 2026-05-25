@@ -66,4 +66,14 @@ public class ChatRoomController {
                 .status(HttpStatus.OK)
                 .body(ApiResponse.ok("채팅 메시지 조회에 성공했습니다.", response));
     }
+
+    //채팅방 삭제(숨기기)
+    @PatchMapping("/{roomId}/hide")
+    public ResponseEntity<?> deleteChatRoom(@PathVariable Long roomId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        chatRoomService.deleteChatRoom(roomId, userId);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.ok("채팅방이 숨김 처리되었습니다.", null));
+    }
 }
