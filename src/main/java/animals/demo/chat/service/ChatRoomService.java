@@ -1,14 +1,12 @@
 package animals.demo.chat.service;
 
-import animals.demo.chat.dto.ChatRoomListResponseDto;
-import animals.demo.chat.dto.ChatRoomResponseDto;
-import animals.demo.chat.dto.CreateChatRoomRequestDto;
-import animals.demo.chat.dto.CreateChatRoomResponseDto;
+import animals.demo.chat.dto.*;
 import animals.demo.chat.entity.ChatRoom;
 import animals.demo.chat.repository.ChatRoomRepository;
 import animals.demo.common.CustomException;
 import animals.demo.common.ErrorCode;
 import animals.demo.post.entity.Post;
+import animals.demo.post.entity.PostImage;
 import animals.demo.post.repository.PostImageRepository;
 import animals.demo.post.repository.PostRepository;
 import animals.demo.user.entity.User;
@@ -76,7 +74,7 @@ public class ChatRoomService {
 
     //채팅방 목록 조회
     @Transactional
-    public ChatRoomListResponseDto getChatRoom(Long userId) {
+    public ChatRoomListResponseDto getChatRoomList(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
@@ -101,6 +99,27 @@ public class ChatRoomService {
                 .chatRooms(chatRoomList)
                 .build();
 
+    }
+
+    //채팅방 상세 조회
+    @Transactional
+    public ChatResponseDto getChatRoom(Long userId, Long roomId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId)
+                .orElseThrow(() -> new CustomException(ErrorCode.CHATROOM_NOT_FOUND));
+
+        String thumbnailImageUrl = postImageRepository
+                .findFirstByPost_PostIdAndOrderIndex(chatRoom.getPost().getPostId(), 1)
+                .map(PostImage::getPostImageUrl)
+                .orElse(null);
+
+        return ChatResponseDto.builder()
+                .roomId(chatRoom.getRoomId())
+                .nickname(chatRoom.getPost().getAuthor().getNickname())
+                .thumbnailImageUrl(thumbnailImageUrl)
+                .build();
     }
 
 }

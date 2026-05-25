@@ -1,5 +1,6 @@
 package animals.demo.chat.controller;
 
+import animals.demo.chat.dto.ChatResponseDto;
 import animals.demo.chat.dto.ChatRoomListResponseDto;
 import animals.demo.chat.dto.CreateChatRoomRequestDto;
 import animals.demo.chat.dto.CreateChatRoomResponseDto;
@@ -37,13 +38,21 @@ public class ChatRoomController {
 
     //채팅방 목록 조회
     @GetMapping
-    public ResponseEntity<?> getChatRoom() {
+    public ResponseEntity<?> getChatRoomList() {
         Long userId = SecurityUtils.getCurrentUserId();
-        ChatRoomListResponseDto response = chatRoomService.getChatRoom(userId);
+        ChatRoomListResponseDto response = chatRoomService.getChatRoomList(userId);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.ok("채팅방 목록 조회에 성공했습니다.", response));
     }
 
     //채팅방 상세 조회
+    @GetMapping("/{roomId}")
+    public ResponseEntity<?> getChatRoom(@PathVariable Long roomId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        ChatResponseDto response = chatRoomService.getChatRoom(userId, roomId);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.ok("채팅방 상세 조회에 성공했습니다.", response));
+    }
 }
