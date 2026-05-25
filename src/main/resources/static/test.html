@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+    <button onclick="connect()">연결</button>
+    <button onclick="sendMessage()">메시지 전송</button>
+    <div id="log"></div>
+
+    <script>
+        var stompClient;
+
+        function connect() {
+            var socket = new SockJS('http://localhost:8080/ws/chat');
+            stompClient = Stomp.over(socket);
+            stompClient.connect({}, function(frame) {
+                document.getElementById('log').innerHTML += '<p>연결됨: ' + frame + '</p>';
+                stompClient.subscribe('/topic/chat/1', function(message) {
+                    document.getElementById('log').innerHTML += '<p>받은 메시지: ' + message.body + '</p>';
+                });
+            });
+        }
+
+        function sendMessage() {
+            stompClient.send("/app/chat/message", {},
+                JSON.stringify({roomId: 1, senderUserId: 1, content: "안녕하세요"}));
+        }
+    </script>
+</body>
+</html>

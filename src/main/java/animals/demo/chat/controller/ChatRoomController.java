@@ -44,4 +44,6 @@ public class ChatRoomController {
                 .status(HttpStatus.OK)
                 .body(ApiResponse.ok("채팅방 목록 조회에 성공했습니다.", response));
     }
+
+    //채팅방 상세 조회
 }

@@ -19,11 +19,11 @@ public class UserBlock {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userId", nullable = false)
+    @JoinColumn(name = "blocker_Id", nullable = false)
     private User blocker;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userId", nullable = false)
+    @JoinColumn(name = "blocked_Id", nullable = false)
     private User blocked;
 
     @Builder
