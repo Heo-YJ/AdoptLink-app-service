@@ -31,4 +31,13 @@ public class ApiResponse<T> {
                 .build();
     }
 
+    //실패응답 - 500
+    public static <T> ApiResponse<T> error(int status, String message) {
+        return ApiResponse.<T>builder()
+                .status(status)
+                .message(message)
+                .data(null)
+                .build();
+    }
+
 }
