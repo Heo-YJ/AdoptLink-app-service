@@ -2,6 +2,7 @@ package animals.demo.notification.service;
 
 import animals.demo.common.CustomException;
 import animals.demo.common.ErrorCode;
+import animals.demo.notification.dto.ChangeNotificationRequestDto;
 import animals.demo.notification.dto.NotificationResponseDto;
 import animals.demo.notification.entity.NotificationPreference;
 import animals.demo.notification.entity.Type;
@@ -53,6 +54,25 @@ public class NotificationService {
                 .noticeNotification(noticeEnabled)
                 .marketingNotification(marketingEnabled)
                 .build();
+    }
+
+    //알림 설정 변경
+    @Transactional
+    public void changeNotification(Long userId, ChangeNotificationRequestDto changeNotificationRequestDto) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        List<NotificationPreference> notifications =
+                notificationRepository.findByUser_UserId(userId);
+
+        notifications.forEach(notification -> {
+            switch (notification.getType()) {
+                case CHAT_MESSAGE -> notification.updateEnabled(changeNotificationRequestDto.isChatNotification());
+                case INQUIRY_REPLY -> notification.updateEnabled(changeNotificationRequestDto.isNoticeNotification());
+                case MARKETING -> notification.updateEnabled(changeNotificationRequestDto.isMarketingNotification());
+            }
+        });
 
     }
 }

@@ -6,6 +6,10 @@ import animals.demo.auth.repository.RefreshTokenRepository;
 import animals.demo.common.CustomException;
 import animals.demo.common.ErrorCode;
 import animals.demo.common.sms.SmsService;
+import animals.demo.notification.entity.Channel;
+import animals.demo.notification.entity.NotificationPreference;
+import animals.demo.notification.entity.Type;
+import animals.demo.notification.repository.NotificationRepository;
 import animals.demo.security.JwtTokenProvider;
 import animals.demo.user.entity.User;
 import animals.demo.user.repository.UserRepository;
@@ -16,6 +20,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -30,10 +35,13 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final RedisTemplate<String, String> redisTemplate;
     private final SmsService smsService;
+    private final NotificationRepository notificationRepository;
 
     //회원가입
     @Transactional
     public SignupResponseDto signup(SignupRequestDto signupRequestDto) {
+
+
         //인증된 휴대폰인지 확인
         String verifiedPhone = redisTemplate.opsForValue().get("verified: " + signupRequestDto.getVerificationId());
             if(verifiedPhone == null) {
@@ -61,6 +69,30 @@ public class AuthService {
         User user = userRepository.save(signupRequestDto.toEntity(encodedPassword, verifiedPhone));
 
         redisTemplate.delete("verified: " + signupRequestDto.getVerificationId());
+
+
+        // 기본 알림 설정 생성 (모두 true로)
+        List<NotificationPreference> defaultNotifications = List.of(
+                NotificationPreference.builder()
+                        .user(user)
+                        .type(Type.CHAT_MESSAGE)
+                        .channel(Channel.PUSH)
+                        .enabled(true)
+                        .build(),
+                NotificationPreference.builder()
+                        .user(user)
+                        .type(Type.INQUIRY_REPLY)
+                        .channel(Channel.PUSH)
+                        .enabled(true)
+                        .build(),
+                NotificationPreference.builder()
+                        .user(user)
+                        .type(Type.MARKETING)
+                        .channel(Channel.PUSH)
+                        .enabled(true)
+                        .build()
+        );
+        notificationRepository.saveAll(defaultNotifications);
 
         return SignupResponseDto.builder()
                 .userId(user.getUserId())
