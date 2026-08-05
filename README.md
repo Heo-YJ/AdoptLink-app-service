@@ -121,6 +121,3 @@ src/main/java/animals/demo/
 ```
 ---
 
-## 🔗 링크
-- **API 명세서**: [Notion 링크]
-- **Android Repository**: [GitHub 링크]
