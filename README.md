@@ -22,7 +22,7 @@
 - AWS EC2, RDS, S3
 
 **Tools**
-- Git, GitHub, Notion (API 명세서)
+- Git, GitHub, Notion
 
 ---
 
@@ -31,20 +31,20 @@
 ### 👤 회원
 - 휴대폰 SMS 인증 기반 회원가입 (Redis TTL 5분 자동 만료)
 - JWT Access Token + Refresh Token 이중 구조 인증
-- 프로필 수정, 회원탈퇴 (Soft Delete)
+- 프로필 수정, 회원탈퇴
 - 유저 차단
 
 ### 📋 게시글
 - 유기동물 분양 게시글 CRUD
 - 키워드 기반 게시글 검색 (offset 페이지네이션)
-- 게시글 스크랩 (토글)
-- 분양 상태 변경 (AVAILABLE / COMPLETED)
-- 이미지 업로드 (S3 직접 업로드 방식)
+- 게시글 스크랩
+- 분양 상태 변경
+- 이미지 업로드
 
 ### 💬 채팅
 - WebSocket + STOMP 기반 실시간 채팅
 - 채팅방 생성, 목록 조회, 메시지 조회
-- 채팅방 숨기기 (개인별 처리)
+- 채팅방 숨기기
 - 차단된 유저와 채팅 불가
 
 ### 🏠 보호소
