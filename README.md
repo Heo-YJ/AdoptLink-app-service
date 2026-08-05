@@ -12,7 +12,7 @@
 ## 기술 스택
 
 **Backend**
-- Java 17, Spring Boot 3, Spring Security, Spring Data JPA
+- Java, Spring Boot, Spring Security, Spring Data JPA
 - WebSocket + STOMP
 
 **Database & Cache**
