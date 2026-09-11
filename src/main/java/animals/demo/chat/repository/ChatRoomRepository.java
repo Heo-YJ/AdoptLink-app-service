@@ -11,5 +11,12 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     Optional<ChatRoom> findByRoomId(Long roomId);
     List<ChatRoom> findByInquiryUser_UserId(Long userId);
 
-    Long roomId(Long roomId);
+    @org.springframework.data.jpa.repository.Query("""
+            select r from ChatRoom r
+            where (r.inquiryUser.userId = :userId or r.post.author.userId = :userId)
+              and not exists (select m.id from ChatRoomMember m
+                  where m.chatRoom = r and m.user.userId = :userId and m.hidden = true)
+            order by r.lastMessageAt desc, r.roomId desc
+            """)
+    List<ChatRoom> findVisibleRooms(@org.springframework.data.repository.query.Param("userId") Long userId);
 }
