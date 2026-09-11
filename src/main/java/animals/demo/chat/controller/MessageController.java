@@ -16,8 +16,11 @@ public class MessageController {
     private final SimpMessagingTemplate messagingTemplate;
 
     @MessageMapping("/chat/message")
-    public void sendMessage(MessageDto messageDto) {
-        MessageDto savedMessage = messageService.saveMessage(messageDto);
+    public void sendMessage(MessageDto messageDto, java.security.Principal principal) {
+        if (principal == null) {
+            throw new org.springframework.security.access.AccessDeniedException("Authentication required");
+        }
+        MessageDto savedMessage = messageService.saveMessage(Long.valueOf(principal.getName()), messageDto);
         messagingTemplate.convertAndSend(
                 "/topic/chat/" + messageDto.getRoomId(),
                 savedMessage

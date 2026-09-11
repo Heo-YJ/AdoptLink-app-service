@@ -40,6 +40,10 @@ public class ChatRoomService {
         Post post = postRepository.findById(createChatRoomRequestDto.getPostId())
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
+        if (userId.equals(post.getAuthor().getUserId())) {
+            throw new CustomException(ErrorCode.BAD_REQUEST);
+        }
+
         //차단 여부 확인. 차단된 유저 관계는 채팅방을 생성할 수 없음
         Long authorId = post.getAuthor().getUserId();
         if (userBlockRepository.existsByBlocker_UserIdAndBlocked_UserId(userId, authorId)
@@ -75,6 +79,9 @@ public class ChatRoomService {
 
         ChatRoom savedRoom = chatRoomRepository.save(chatRoom);
 
+        chatRoomMemberRepository.save(ChatRoomMember.builder().chatRoom(savedRoom).user(user).build());
+        chatRoomMemberRepository.save(ChatRoomMember.builder().chatRoom(savedRoom).user(post.getAuthor()).build());
+
         return CreateChatRoomResponseDto.builder()
                 .postId(post.getPostId())
                 .roomId(savedRoom.getRoomId())
@@ -88,7 +95,7 @@ public class ChatRoomService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        List<ChatRoom> chatRooms = chatRoomRepository.findByInquiryUser_UserId(userId);
+        List<ChatRoom> chatRooms = chatRoomRepository.findVisibleRooms(userId);
 
         List<ChatRoomResponseDto> chatRoomList = chatRooms.stream()
                 .map(chatRoom -> {
@@ -98,7 +105,8 @@ public class ChatRoomService {
                             .orElse(null);
                     return ChatRoomResponseDto.builder()
                             .roomId(chatRoom.getRoomId())
-                            .nickname(chatRoom.getPost().getAuthor().getNickname())
+                            .nickname((chatRoom.getInquiryUser().getUserId().equals(userId)
+                                    ? chatRoom.getPost().getAuthor() : chatRoom.getInquiryUser()).getNickname())
                             .thumbnailImageUrl(thumbnailImageUrl)
                             .lastMessage(chatRoom.getLastMessage())
                             .lastMessageAt(chatRoom.getLastMessageAt())
@@ -120,6 +128,8 @@ public class ChatRoomService {
         ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.CHATROOM_NOT_FOUND));
 
+        requireParticipant(chatRoom, userId);
+
         String thumbnailImageUrl = postImageRepository
                 .findFirstByPost_PostIdAndOrderIndex(chatRoom.getPost().getPostId(), 1)
                 .map(PostImage::getPostImageUrl)
@@ -127,7 +137,8 @@ public class ChatRoomService {
 
         return ChatResponseDto.builder()
                 .roomId(chatRoom.getRoomId())
-                .nickname(chatRoom.getPost().getAuthor().getNickname())
+                .nickname((chatRoom.getInquiryUser().getUserId().equals(userId)
+                                    ? chatRoom.getPost().getAuthor() : chatRoom.getInquiryUser()).getNickname())
                 .thumbnailImageUrl(thumbnailImageUrl)
                 .build();
     }
@@ -138,9 +149,20 @@ public class ChatRoomService {
         ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.CHATROOM_NOT_FOUND));
 
+        requireParticipant(chatRoom, userId);
+
         ChatRoomMember chatRoomMember = chatRoomMemberRepository.findByChatRoom_RoomIdAndUser_UserId(roomId, userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.CHATROOM_NOT_FOUND));
+                .orElseGet(() -> chatRoomMemberRepository.save(ChatRoomMember.builder()
+                        .chatRoom(chatRoom).user(userRepository.findById(userId)
+                                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND))).build()));
 
         chatRoomMember.hide();
+    }
+
+    public static void requireParticipant(ChatRoom room, Long userId) {
+        if (userId == null || (!userId.equals(room.getInquiryUser().getUserId())
+                && !userId.equals(room.getPost().getAuthor().getUserId()))) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
     }
 }

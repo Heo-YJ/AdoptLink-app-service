@@ -1,31 +1,50 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
+    <meta charset="UTF-8">
+    <title>채팅 테스트</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 </head>
 <body>
+    <label>액세스 토큰 <input id="token" type="password" autocomplete="off"></label>
+    <label>채팅방 ID <input id="roomId" type="number" min="1" value="1"></label>
     <button onclick="connect()">연결</button>
     <button onclick="sendMessage()">메시지 전송</button>
     <div id="log"></div>
 
     <script>
         var stompClient;
+        var connectedRoomId;
+        function log(text) {
+            var entry = document.createElement('p');
+            entry.textContent = text;
+            document.getElementById('log').appendChild(entry);
+        }
 
         function connect() {
-            var socket = new SockJS('http://localhost:8080/ws/chat');
+            if (stompClient && stompClient.connected) return;
+            var token = document.getElementById('token').value.trim();
+            connectedRoomId = Number(document.getElementById('roomId').value);
+            if (!token || !Number.isSafeInteger(connectedRoomId) || connectedRoomId < 1) {
+                log('액세스 토큰과 올바른 채팅방 ID를 입력하세요.');
+                return;
+            }
+            var socket = new SockJS('/ws/chat');
             stompClient = Stomp.over(socket);
-            stompClient.connect({}, function(frame) {
-                document.getElementById('log').innerHTML += '<p>연결됨: ' + frame + '</p>';
-                stompClient.subscribe('/topic/chat/1', function(message) {
-                    document.getElementById('log').innerHTML += '<p>받은 메시지: ' + message.body + '</p>';
+            stompClient.debug = function() {};
+            stompClient.connect({Authorization: 'Bearer ' + token}, function(frame) {
+                log('연결됨');
+                stompClient.subscribe('/topic/chat/' + connectedRoomId, function(message) {
+                    log('받은 메시지: ' + message.body);
                 });
-            });
+            }, function() { log('연결 실패: 토큰과 채팅방 권한을 확인하세요.'); });
         }
 
         function sendMessage() {
+            if (!stompClient || !stompClient.connected) { log('먼저 연결하세요.'); return; }
             stompClient.send("/app/chat/message", {},
-                JSON.stringify({roomId: 1, senderUserId: 1, content: "안녕하세요"}));
+                JSON.stringify({roomId: connectedRoomId, content: "안녕하세요"}));
         }
     </script>
 </body>

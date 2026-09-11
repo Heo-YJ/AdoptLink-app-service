@@ -35,11 +35,16 @@ public class MessageService {
 
     //메시지 전송
     @Transactional
-    public MessageDto saveMessage(MessageDto messageDto) {
+    public MessageDto saveMessage(Long userId, MessageDto messageDto) {
+        if (messageDto.getRoomId() == null || messageDto.getContent() == null || messageDto.getContent().isBlank()) {
+            throw new CustomException(ErrorCode.BAD_REQUEST);
+        }
         ChatRoom chatRoom = chatRoomRepository.findById(messageDto.getRoomId())
                 .orElseThrow(() -> new CustomException(ErrorCode.CHATROOM_NOT_FOUND));
 
-        User sender = userRepository.findById(messageDto.getSenderUserId())
+        ChatRoomService.requireParticipant(chatRoom, userId);
+        messageDto.setSenderUserId(userId);
+        User sender = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         Long inquiryUserId = chatRoom.getInquiryUser().getUserId();
@@ -59,6 +64,7 @@ public class MessageService {
                 .build();
 
         messageRepository.save(message);
+        chatRoom.updateLastMessage(message.getContent());
 
         //채팅방 숨김상태일 때, 상대방이 메시지를 보내면 숨김=true -> 숨김=false로 전환
         chatRoomMemberRepository.findByChatRoom_RoomIdAndUser_UserId(messageDto.getRoomId(), receiverUserId)
@@ -83,6 +89,9 @@ public class MessageService {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
 
+        if (offset < 0 || limit <= 0 || limit > 100 || offset % limit != 0) {
+            throw new CustomException(ErrorCode.BAD_REQUEST);
+        }
         Pageable pageable = PageRequest.of(
                 offset / limit,
                 limit
