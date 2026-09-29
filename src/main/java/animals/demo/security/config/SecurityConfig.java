@@ -2,6 +2,7 @@ package animals.demo.security.config;
 
 import animals.demo.security.JwtAuthenticationFilter;
 import animals.demo.security.JwtTokenProvider;
+import animals.demo.security.SecurityErrorHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,6 +26,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final SecurityErrorHandler securityErrorHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -34,6 +36,9 @@ public class SecurityConfig {
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(securityErrorHandler)
+                        .accessDeniedHandler(securityErrorHandler))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/signup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
@@ -46,11 +51,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/test.html").permitAll()
-                        .anyRequest().authenticated()
+                        .anyRequest().hasAnyRole("USER", "SHELTER_ADMIN")
                 )
                         //'jwtTokenProvider를 UsernamePasswordAuthenticationFilter 앞에 끼워 넣으라는 뜻
                         .addFilterBefore(
-                                new JwtAuthenticationFilter(jwtTokenProvider),
+                                new JwtAuthenticationFilter(jwtTokenProvider, securityErrorHandler),
                                 UsernamePasswordAuthenticationFilter.class
                         );
         return http.build();
@@ -71,7 +76,7 @@ public class SecurityConfig {
     @Bean
     public RoleHierarchy roleHierarchy() {
         return RoleHierarchyImpl.withDefaultRolePrefix()
-                .role("ADMIN").implies("SHELTER_ADMIN")
+                // ADMIN은 별도 계정이므로 일반 회원 권한을 상속하지 않는다.
                 .role("SHELTER_ADMIN").implies("USER")
                 .build();
     }

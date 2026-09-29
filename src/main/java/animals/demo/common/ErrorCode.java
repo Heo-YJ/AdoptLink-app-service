@@ -10,6 +10,9 @@ public enum ErrorCode {
 
     //공통
     BAD_REQUEST(400, HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
+    UNAUTHORIZED(401, HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
+    INVALID_ACCESS_TOKEN(401, HttpStatus.UNAUTHORIZED, "유효하지 않은 Access Token입니다."),
+    EXPIRED_ACCESS_TOKEN(401, HttpStatus.UNAUTHORIZED, "만료된 Access Token입니다."),
 
     //회원가입
     PHONE_NOT_VERIFIED(400, HttpStatus.BAD_REQUEST, "인증되지 않은 번호입니다."),

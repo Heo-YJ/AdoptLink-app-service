@@ -3,6 +3,8 @@ package animals.demo.auth.controller;
 import animals.demo.auth.dto.*;
 import animals.demo.auth.service.AuthService;
 import animals.demo.common.ApiResponse;
+import animals.demo.common.CustomException;
+import animals.demo.common.ErrorCode;
 import animals.demo.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.Response;
@@ -33,7 +35,10 @@ public class AuthController {
     }
 
     @PostMapping("/reissue")
-    public ResponseEntity<?> reissue(@RequestHeader("Authorization") String authorization) {
+    public ResponseEntity<?> reissue(@RequestHeader(value = "Authorization", required = false) String authorization) {
+        if (authorization == null || !authorization.startsWith("Bearer ") || authorization.substring(7).isBlank()) {
+            throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
         String refreshToken = authorization.substring(7);
         ReissueResponseDto response = authService.reissue(refreshToken);
         return ResponseEntity

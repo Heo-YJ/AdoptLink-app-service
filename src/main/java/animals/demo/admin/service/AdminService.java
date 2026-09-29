@@ -53,7 +53,7 @@ public class AdminService {
 
         //accessToken, refreshToken 발급
         String accessToken = jwtTokenProvider.createAccessToken(admin.getAdminId(), admin.getRole().name());
-        String refreshToken = jwtTokenProvider.createRefreshToken(admin.getAdminId());
+        String refreshToken = jwtTokenProvider.createAdminRefreshToken(admin.getAdminId());
 
         //RefreshToken 저장
         AdminRefreshToken refreshTokenEntity = AdminRefreshToken.builder()
