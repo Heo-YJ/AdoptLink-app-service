@@ -141,9 +141,7 @@ public class AuthService {
     @Transactional
     public ReissueResponseDto reissue(String refreshToken) {
         // 1. Refresh Token 검증
-        if(!jwtTokenProvider.validateToken(refreshToken)) {
-            throw new RuntimeException("Refresh Token이 유효하지 않습니다.");
-        }
+        jwtTokenProvider.validateRefreshToken(refreshToken);
 
         // 2. 토큰에서 userId 가져오기
         Long userId = jwtTokenProvider.getUserId(refreshToken);

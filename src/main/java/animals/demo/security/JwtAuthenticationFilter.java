@@ -1,5 +1,6 @@
 package animals.demo.security;
 
+import animals.demo.common.CustomException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,6 +18,14 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final SecurityErrorHandler securityErrorHandler;
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        // 재발급 헤더는 access token이 아닌 refresh token이며 서비스에서 별도로 검증한다.
+        return "POST".equals(request.getMethod())
+                && (request.getContextPath() + "/api/auth/reissue").equals(request.getRequestURI());
+    }
 
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -25,17 +34,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = resolveToken(request);
 
-        if(token != null && jwtTokenProvider.validateToken(token)) {
-            Long userId = jwtTokenProvider.getUserId(token);
-            String role = jwtTokenProvider.getRole(token);
-
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            userId,
-                            null,
-                            List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                    );
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+        if(token != null) {
+            try {
+                JwtTokenProvider.AccessTokenIdentity identity = jwtTokenProvider.validateAccessToken(token);
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                identity.userId(),
+                                null,
+                                List.of(new SimpleGrantedAuthority("ROLE_" + identity.role()))
+                        );
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } catch (CustomException e) {
+                SecurityContextHolder.clearContext();
+                securityErrorHandler.writeError(response, e.getErrorCode());
+                return;
+            }
         }
 
         filterChain.doFilter(request, response);

@@ -1,6 +1,5 @@
 package animals.demo.security;
 
-import animals.demo.auth.repository.RefreshTokenRepository;
 import animals.demo.common.CustomException;
 import animals.demo.common.ErrorCode;
 import io.jsonwebtoken.Claims;
@@ -41,6 +40,8 @@ public class JwtTokenProvider {
                 //토큰 '주인': userId
                 .subject(String.valueOf(userId))
                 .claim("role", role) //private claim(추가 정보: 권한)
+                .claim("tokenType", "ACCESS")
+                .claim("subjectType", "ADMIN".equals(role) ? "ADMIN" : "USER")
                 .issuedAt(new Date()) //발행 시간 설정
                 //만료 시간 설정
                 .expiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
@@ -50,8 +51,18 @@ public class JwtTokenProvider {
 
     //Refresh Token 생성
     public String createRefreshToken(Long userId) {
+        return createRefreshToken(userId, "USER");
+    }
+
+    public String createAdminRefreshToken(Long adminId) {
+        return createRefreshToken(adminId, "ADMIN");
+    }
+
+    private String createRefreshToken(Long subjectId, String subjectType) {
         return Jwts.builder()
-                .subject(String.valueOf(userId))
+                .subject(String.valueOf(subjectId))
+                .claim("tokenType", "REFRESH")
+                .claim("subjectType", subjectType)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + refreshTokenExpiration))
                 .signWith(secretKey)
@@ -68,16 +79,50 @@ public class JwtTokenProvider {
         return getClaims(token).get("role", String.class);
     }
 
-    //토큰 유효성 검사
-    public boolean validateToken(String token) {
-        try {
-            getClaims(token);
-            return true;
-        } catch (ExpiredJwtException e) {
-            throw new CustomException(ErrorCode.EXPIRED_TOKEN);
-        } catch (JwtException | IllegalArgumentException e) {
+    public AccessTokenIdentity validateAccessToken(String token) {
+        Claims claims = getValidatedClaims(token, ErrorCode.INVALID_ACCESS_TOKEN, ErrorCode.EXPIRED_ACCESS_TOKEN);
+        Object role = claims.get("role");
+        boolean userRole = "USER".equals(role) || "SHELTER_ADMIN".equals(role);
+        boolean adminRole = "ADMIN".equals(role);
+        if (!"ACCESS".equals(claims.get("tokenType"))
+                || !(userRole || adminRole)
+                || !(adminRole ? "ADMIN" : "USER").equals(claims.get("subjectType"))) {
+            throw new CustomException(ErrorCode.INVALID_ACCESS_TOKEN);
+        }
+        return new AccessTokenIdentity(Long.parseLong(claims.getSubject()), (String) role);
+    }
+
+    public record AccessTokenIdentity(Long userId, String role) {
+    }
+
+    // 일반 회원 재발급 API는 별도 ID 체계의 관리자 refresh token을 받지 않는다.
+    public void validateRefreshToken(String token) {
+        Claims claims = getValidatedClaims(token, ErrorCode.INVALID_REFRESH_TOKEN, ErrorCode.EXPIRED_TOKEN);
+        if (!"REFRESH".equals(claims.get("tokenType"))
+                || !"USER".equals(claims.get("subjectType"))
+                || claims.get("role") != null) {
             throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
+    }
+
+    private Claims getValidatedClaims(String token, ErrorCode invalid, ErrorCode expired) {
+        try {
+            Claims claims = getClaims(token);
+            if (claims.getExpiration() == null || Long.parseLong(claims.getSubject()) <= 0) {
+                throw new CustomException(invalid);
+            }
+            return claims;
+        } catch (ExpiredJwtException e) {
+            throw new CustomException(expired);
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new CustomException(invalid);
+        }
+    }
+
+    // 기존 STOMP 호출도 access token의 용도와 계정 종류까지 검증한다.
+    public boolean validateToken(String token) {
+        validateAccessToken(token);
+        return true;
     }
 
     /*
