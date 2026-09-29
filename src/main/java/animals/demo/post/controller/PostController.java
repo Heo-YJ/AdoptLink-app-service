@@ -43,7 +43,7 @@ public class PostController {
     @PatchMapping("/{postId}")
     public ResponseEntity<?> updatePost(@PathVariable Long postId, @RequestBody UpdatePostRequestDto updatePostRequestDto) {
         Long userId = SecurityUtils.getCurrentUserId();
-        postService.updatePost(userId, postId, updatePostRequestDto);
+        postService.updatePost(postId, userId, updatePostRequestDto);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.ok("게시글이 수정되었습니다.", null));
